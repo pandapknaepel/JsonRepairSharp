@@ -16,6 +16,25 @@ This fork of [JsonRepairSharp](https://github.com/thijse/JsonRepairSharp) introd
 
 By maintaining the original functionality of JsonRepairSharp while making these refinements, this fork enhances usability, performance, and maintainability.
 
+## Installation
+
+The updated **JsonRepairSharp** library is available as a NuGet package.
+
+**NuGet Package:**  
+🔗 [jsonrepairsharp on NuGet](https://www.nuget.org/packages/jsonrepairsharp/)
+
+### Install via .NET CLI:
+```sh
+dotnet add package jsonrepairsharp
+```
+
+### Install via NuGet Package Manager:
+```sh
+Install-Package jsonrepairsharp
+```
+
+This allows you to quickly integrate the library into your .NET project and use its JSON repair functionality efficiently.
+
 ## About this project
 
 Jsonrepair Sharp is a near-literal translation of the TypeScript JsonRepair library, see https://github.com/josdejong/jsonrepair

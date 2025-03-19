@@ -1,12 +1,26 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <Version>1.2.1</Version>
-    <AssemblyVersion>1.2.1.*</AssemblyVersion>
-    <Deterministic>false</Deterministic>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <Version>1.2.2</Version>
+        <AssemblyVersion>1.2.2</AssemblyVersion>
+        <Deterministic>false</Deterministic>
+        <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <Authors>Patrick Knäpel - librics Gmbh &amp; Co. KG</Authors>
+        <Description>JsonRepairSharp is an advanced JSON library that repairs corrupted JSON data and improves thread safety.</Description>
+        <RepositoryUrl>https://github.com/pandapknaepel/JsonRepairSharp</RepositoryUrl>
+        <PackageTags>JSON, Repair, Thread-Safe, .NET</PackageTags>
+        <PackageIcon>logo_small.png</PackageIcon>
+        <PackageReleaseNotes>This fork of JsonRepairSharp improves thread safety by removing static properties and adding parameters to the RepairJson method. It has been updated to .NET 9.</PackageReleaseNotes>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="../LICENSE.md" Pack="true" Visible="false" PackagePath=""/>
+        <None Include="../README.md" Pack="true" Visible="false" PackagePath=""/>
+        <None Include="../Assets/logo_small.png" Pack="true" Visible="false" PackagePath=""/>
+    </ItemGroup>
 
 </Project>
