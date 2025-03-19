@@ -18,7 +18,7 @@ public class JsonRepairTests
     {
         var repairedJson = JsonRepair.RepairJson(input);
         LogAssertRepair(input,repairedJson, output);
-        Assert.AreEqual(repairedJson, output);
+        Assert.That(repairedJson, Is.EqualTo(output));
     }
 
     // Test helper function
@@ -47,7 +47,7 @@ public class JsonRepairTests
 
     private void AssertRepair(string input, string output, string message)
     {
-        Assert.AreEqual(JsonRepair.RepairJson(input), output, message);
+        Assert.That(input, Is.EqualTo(output), message);
     }
 
 
@@ -130,31 +130,31 @@ public class JsonRepairTests
     [Test, Description("Parse a valid JSON object with Unicode characters in strings")]
     public void ParseValidJson_SupportsUnicodeCharactersInString()
     {
-        Assert.AreEqual(JsonRepair.RepairJson("\"★\""), "\"★\"");
-        Assert.AreEqual(JsonRepair.RepairJson("\"\\u2605\""), "\"\\u2605\"");
-        Assert.AreEqual(JsonRepair.RepairJson("\"😀\""), "\"😀\"");
-        Assert.AreEqual(JsonRepair.RepairJson("\"\\ud83d\\ude00\""), "\"\\ud83d\\ude00\"");
-        Assert.AreEqual(JsonRepair.RepairJson("\"йнформация\""), "\"йнформация\"");
+        Assert.That(JsonRepair.RepairJson("\"★\""), Is.EqualTo("\"★\""));
+        Assert.That(JsonRepair.RepairJson("\"\\u2605\""), Is.EqualTo("\"\\u2605\""));
+        Assert.That(JsonRepair.RepairJson("\"😀\""), Is.EqualTo("\"😀\""));
+        Assert.That(JsonRepair.RepairJson("\"\\ud83d\\ude00\""), Is.EqualTo("\"\\ud83d\\ude00\""));
+        Assert.That(JsonRepair.RepairJson("\"йнформация\""), Is.EqualTo("\"йнформация\""));
     }
 
     [Test, Description("Parse a valid JSON object with escaped Unicode characters in strings")]
     public void ParseValidJson_SupportsEscapedUnicodeCharactersInString()
     {
-        Assert.AreEqual(JsonRepair.RepairJson("\"\\u2605\""), "\"\\u2605\"");
-        Assert.AreEqual(JsonRepair.RepairJson("\"\\ud83d\\ude00\""), "\"\\ud83d\\ude00\"");
-        Assert.AreEqual(
+        Assert.That(JsonRepair.RepairJson("\"\\u2605\""), Is.EqualTo("\"\\u2605\""));
+        Assert.That(JsonRepair.RepairJson("\"\\ud83d\\ude00\""), Is.EqualTo("\"\\ud83d\\ude00\""));
+        Assert.That(
             JsonRepair.RepairJson("\"\\u0439\\u043d\\u0444\\u043e\\u0440\\u043c\\u0430\\u0446\\u0438\\u044f\""),
-            "\"\\u0439\\u043d\\u0444\\u043e\\u0440\\u043c\\u0430\\u0446\\u0438\\u044f\""
+            Is.EqualTo("\"\\u0439\\u043d\\u0444\\u043e\\u0440\\u043c\\u0430\\u0446\\u0438\\u044f\"")
         );
     }
 
     [Test, Description("Parse a valid JSON object with Unicode characters in keys")]
     public void ParseValidJson_SupportsUnicodeCharactersInKey()
     {
-        Assert.AreEqual(JsonRepair.RepairJson("{\"★\":true}"), "{\"★\":true}");
-        Assert.AreEqual(JsonRepair.RepairJson("{\"\\u2605\":true}"), "{\"\\u2605\":true}");
-        Assert.AreEqual(JsonRepair.RepairJson("{\"😀\":true}"), "{\"😀\":true}");
-        Assert.AreEqual(JsonRepair.RepairJson("{\"\\ud83d\\ude00\":true}"), "{\"\\ud83d\\ude00\":true}");
+        Assert.That(JsonRepair.RepairJson("{\"★\":true}"), Is.EqualTo("{\"★\":true}"));
+        Assert.That(JsonRepair.RepairJson("{\"\\u2605\":true}"), Is.EqualTo("{\"\\u2605\":true}"));
+        Assert.That(JsonRepair.RepairJson("{\"😀\":true}"), Is.EqualTo("{\"😀\":true}"));
+        Assert.That(JsonRepair.RepairJson("{\"\\ud83d\\ude00\":true}"), Is.EqualTo("{\"\\ud83d\\ude00\":true}"));
     }
 
     [Test, Description("Repair invalid JSON by adding missing quotes")]
@@ -420,7 +420,7 @@ public class JsonRepairTests
             "   \"decimal2\" : 4\n" +
             "}";
 
-        Assert.AreEqual(JsonRepair.RepairJson(mongoDocument), expectedJson);
+        Assert.That(JsonRepair.RepairJson(mongoDocument), Is.EqualTo(expectedJson));
     }
 
     [Test, Description("Repair invalid JSON by replacing Python constants")]
@@ -519,7 +519,7 @@ public class JsonRepairTests
             "{}\n";
         string expected = "[\n\n{},\n\n\n{},\n\n\n{}\n\n]";
 
-        Assert.AreEqual(JsonRepair.RepairJson(text), expected);
+        Assert.That(JsonRepair.RepairJson(text), Is.EqualTo(expected));
     }
 
     [Test, Description("Repair invalid JSON by repairing newline-separated JSON with commas")]
@@ -536,7 +536,7 @@ public class JsonRepairTests
             "{}\n";
         string expected = "[\n\n{},\n\n\n{},\n\n\n{}\n\n]";
 
-        Assert.AreEqual(JsonRepair.RepairJson(text), expected);
+        Assert.That(JsonRepair.RepairJson(text), Is.EqualTo(expected));
     }
 
     [Test, Description("Repair invalid JSON by repairing newline-separated JSON with commas and trailing comma")]
@@ -553,7 +553,7 @@ public class JsonRepairTests
             "{},\n";
         string expected = "[\n\n{},\n\n\n{},\n\n\n{}\n\n]";
 
-        Assert.AreEqual(JsonRepair.RepairJson(text), expected);
+        Assert.That(JsonRepair.RepairJson(text), Is.EqualTo(expected));
     }
 
     [Test, Description("Repair invalid JSON by repairing comma-separated list with value")]
