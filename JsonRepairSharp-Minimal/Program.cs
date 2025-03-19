@@ -5,10 +5,13 @@ namespace JsonRepairSharpMinimal
 {
     internal class Program
     {
+        private static JsonRepair.InputType _inputType;
+        private static bool _throwExceptions;
+
         static void Main(string[] args)
         {
-            JsonRepair.ThrowExceptions = true;
-            JsonRepair.Context         = LLM;
+            _throwExceptions = true;
+            _inputType         = LLM;
 
             try
             {
@@ -25,7 +28,7 @@ namespace JsonRepairSharpMinimal
 
         private static void AssertRepair(string text, string expected)
         {
-            string result = JsonRepair.RepairJson(text);
+            string result = JsonRepair.RepairJson(text, _inputType, _throwExceptions);
             if (result == expected)
             {
                 Console.WriteLine("PASS: " + text);

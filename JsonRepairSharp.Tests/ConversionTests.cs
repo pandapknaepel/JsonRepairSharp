@@ -5,18 +5,21 @@ namespace JsonRepairSharp.Test;
 [TestFixture]
 public class JsonRepairTests
 {
+    private bool _throwExceptions;
+    private JsonRepair.InputType _inputType;
 
     [SetUp]
     public void Setup()
     {
         // Enable throwing exceptions
-        JsonRepair.ThrowExceptions = true;
+        _throwExceptions = true;
+        _inputType = JsonRepair.InputType.Other;
     }
 
     // Test helper function
     private void AssertRepair(string input, string output)
     {
-        var repairedJson = JsonRepair.RepairJson(input);
+        var repairedJson = JsonRepair.RepairJson(input, _inputType, _throwExceptions);
         LogAssertRepair(input,repairedJson, output);
         Assert.That(repairedJson, Is.EqualTo(output));
     }
@@ -130,20 +133,20 @@ public class JsonRepairTests
     [Test, Description("Parse a valid JSON object with Unicode characters in strings")]
     public void ParseValidJson_SupportsUnicodeCharactersInString()
     {
-        Assert.That(JsonRepair.RepairJson("\"★\""), Is.EqualTo("\"★\""));
-        Assert.That(JsonRepair.RepairJson("\"\\u2605\""), Is.EqualTo("\"\\u2605\""));
-        Assert.That(JsonRepair.RepairJson("\"😀\""), Is.EqualTo("\"😀\""));
-        Assert.That(JsonRepair.RepairJson("\"\\ud83d\\ude00\""), Is.EqualTo("\"\\ud83d\\ude00\""));
-        Assert.That(JsonRepair.RepairJson("\"йнформация\""), Is.EqualTo("\"йнформация\""));
+        Assert.That(JsonRepair.RepairJson("\"★\"", _inputType, _throwExceptions), Is.EqualTo("\"★\""));
+        Assert.That(JsonRepair.RepairJson("\"\\u2605\"", _inputType, _throwExceptions), Is.EqualTo("\"\\u2605\""));
+        Assert.That(JsonRepair.RepairJson("\"😀\"", _inputType, _throwExceptions), Is.EqualTo("\"😀\""));
+        Assert.That(JsonRepair.RepairJson("\"\\ud83d\\ude00\"", _inputType, _throwExceptions), Is.EqualTo("\"\\ud83d\\ude00\""));
+        Assert.That(JsonRepair.RepairJson("\"йнформация\"", _inputType, _throwExceptions), Is.EqualTo("\"йнформация\""));
     }
 
     [Test, Description("Parse a valid JSON object with escaped Unicode characters in strings")]
     public void ParseValidJson_SupportsEscapedUnicodeCharactersInString()
     {
-        Assert.That(JsonRepair.RepairJson("\"\\u2605\""), Is.EqualTo("\"\\u2605\""));
-        Assert.That(JsonRepair.RepairJson("\"\\ud83d\\ude00\""), Is.EqualTo("\"\\ud83d\\ude00\""));
+        Assert.That(JsonRepair.RepairJson("\"\\u2605\"", _inputType, _throwExceptions), Is.EqualTo("\"\\u2605\""));
+        Assert.That(JsonRepair.RepairJson("\"\\ud83d\\ude00\"", _inputType, _throwExceptions), Is.EqualTo("\"\\ud83d\\ude00\""));
         Assert.That(
-            JsonRepair.RepairJson("\"\\u0439\\u043d\\u0444\\u043e\\u0440\\u043c\\u0430\\u0446\\u0438\\u044f\""),
+            JsonRepair.RepairJson("\"\\u0439\\u043d\\u0444\\u043e\\u0440\\u043c\\u0430\\u0446\\u0438\\u044f\"", _inputType, _throwExceptions),
             Is.EqualTo("\"\\u0439\\u043d\\u0444\\u043e\\u0440\\u043c\\u0430\\u0446\\u0438\\u044f\"")
         );
     }
@@ -151,10 +154,10 @@ public class JsonRepairTests
     [Test, Description("Parse a valid JSON object with Unicode characters in keys")]
     public void ParseValidJson_SupportsUnicodeCharactersInKey()
     {
-        Assert.That(JsonRepair.RepairJson("{\"★\":true}"), Is.EqualTo("{\"★\":true}"));
-        Assert.That(JsonRepair.RepairJson("{\"\\u2605\":true}"), Is.EqualTo("{\"\\u2605\":true}"));
-        Assert.That(JsonRepair.RepairJson("{\"😀\":true}"), Is.EqualTo("{\"😀\":true}"));
-        Assert.That(JsonRepair.RepairJson("{\"\\ud83d\\ude00\":true}"), Is.EqualTo("{\"\\ud83d\\ude00\":true}"));
+        Assert.That(JsonRepair.RepairJson("{\"★\":true}", _inputType, _throwExceptions), Is.EqualTo("{\"★\":true}"));
+        Assert.That(JsonRepair.RepairJson("{\"\\u2605\":true}", _inputType, _throwExceptions), Is.EqualTo("{\"\\u2605\":true}"));
+        Assert.That(JsonRepair.RepairJson("{\"😀\":true}", _inputType, _throwExceptions), Is.EqualTo("{\"😀\":true}"));
+        Assert.That(JsonRepair.RepairJson("{\"\\ud83d\\ude00\":true}", _inputType, _throwExceptions), Is.EqualTo("{\"\\ud83d\\ude00\":true}"));
     }
 
     [Test, Description("Repair invalid JSON by adding missing quotes")]
@@ -308,7 +311,7 @@ public class JsonRepairTests
         AssertRepair("  /* foo bar */   callback_123({});  ", "     {}  ");
         AssertRepair("\n/* foo\nbar */\ncallback_123 ({});\n\n", "\n\n{}\n\n");
 
-        Assert.Throws<JSONRepairError>(() => JsonRepair.RepairJson("callback {}"), "Unexpected character \"{\", position: 9");
+        Assert.Throws<JSONRepairError>(() => JsonRepair.RepairJson("callback {}", _inputType, _throwExceptions), "Unexpected character \"{\", position: 9");
     }
 
     [Test, Description("Repair invalid JSON by repairing escaped string contents")]
@@ -420,7 +423,7 @@ public class JsonRepairTests
             "   \"decimal2\" : 4\n" +
             "}";
 
-        Assert.That(JsonRepair.RepairJson(mongoDocument), Is.EqualTo(expectedJson));
+        Assert.That(JsonRepair.RepairJson(mongoDocument, _inputType, _throwExceptions), Is.EqualTo(expectedJson));
     }
 
     [Test, Description("Repair invalid JSON by replacing Python constants")]
@@ -519,7 +522,7 @@ public class JsonRepairTests
             "{}\n";
         string expected = "[\n\n{},\n\n\n{},\n\n\n{}\n\n]";
 
-        Assert.That(JsonRepair.RepairJson(text), Is.EqualTo(expected));
+        Assert.That(JsonRepair.RepairJson(text, _inputType, _throwExceptions), Is.EqualTo(expected));
     }
 
     [Test, Description("Repair invalid JSON by repairing newline-separated JSON with commas")]
@@ -536,7 +539,7 @@ public class JsonRepairTests
             "{}\n";
         string expected = "[\n\n{},\n\n\n{},\n\n\n{}\n\n]";
 
-        Assert.That(JsonRepair.RepairJson(text), Is.EqualTo(expected));
+        Assert.That(JsonRepair.RepairJson(text, _inputType, _throwExceptions), Is.EqualTo(expected));
     }
 
     [Test, Description("Repair invalid JSON by repairing newline-separated JSON with commas and trailing comma")]
@@ -553,7 +556,7 @@ public class JsonRepairTests
             "{},\n";
         string expected = "[\n\n{},\n\n\n{},\n\n\n{}\n\n]";
 
-        Assert.That(JsonRepair.RepairJson(text), Is.EqualTo(expected));
+        Assert.That(JsonRepair.RepairJson(text, _inputType, _throwExceptions), Is.EqualTo(expected));
     }
 
     [Test, Description("Repair invalid JSON by repairing comma-separated list with value")]
@@ -569,43 +572,43 @@ public class JsonRepairTests
     [Test, Description("Repair invalid JSON from LLM by stripping heading & trailing text around Structure")]
     public void RepairInvalidJson_ShouldStripHeadingAndTrailingText()
     {
-        JsonRepair.Context = JsonRepair.InputType.LLM;
+        _inputType = JsonRepair.InputType.LLM;
         AssertRepair("text outside string \"[1,2,3,] text inside string\"", "[1,2,3]");
         AssertRepair("callback_123({});", "{}");
         AssertRepair("text [\n1,2,3\n] text", "[\n1,2,3\n]");
         AssertRepair("Intro   {\"a\":2} ", "{\"a\":2}");
         AssertRepair("{“a”:“b”}\n text\n", "{\"a\":\"b\"}");
         AssertRepair("{} // comment", "{}");
-        JsonRepair.Context = JsonRepair.InputType.Other;
+        _inputType = JsonRepair.InputType.Other;
     }
 
     [Test, Description("Do not repair invalid JSON from LLM because root object cannot be found in text")]
     public void RepairInvalidJson_ShouldNotStripHeadingAndTrailingText()
     {
-        JsonRepair.Context = JsonRepair.InputType.LLM;
+        _inputType = JsonRepair.InputType.LLM;
         AssertRepair("\":\"");
         AssertRepair("\",\"");
-        JsonRepair.Context = JsonRepair.InputType.Other;
+        _inputType = JsonRepair.InputType.Other;
     }
 
     [Test, Description("Throw an exception for non-repairable issues")]
     public void RepairInvalidJson_ShouldThrowExceptionForNonRepairableIssues()
     {
-        Assert.Throws<JSONRepairError>(() => JsonRepair.RepairJson(""), "Unexpected end of JSON string, position: 0");
-        Assert.Throws<JSONRepairError>(() => JsonRepair.RepairJson("{\"a\","), "Colon expected, position: 4");
-        Assert.Throws<JSONRepairError>(() => JsonRepair.RepairJson("{:2}"), "Object key expected, position: 1");
-        Assert.Throws<JSONRepairError>(() => JsonRepair.RepairJson("{\"a\":2,]"), "Unexpected character \"]\", position: 7");
-        Assert.Throws<JSONRepairError>(() => JsonRepair.RepairJson("{\"a\" ]"), "Colon expected, position: 5");
-        Assert.Throws<JSONRepairError>(() => JsonRepair.RepairJson("{}}"), "Unexpected character \"}\", position: 2");
-        Assert.Throws<JSONRepairError>(() => JsonRepair.RepairJson("[2,}"), "Unexpected character \"}\", position: 3");
-        Assert.Throws<JSONRepairError>(() => JsonRepair.RepairJson("2.3.4"), "Unexpected character \".\", position: 3");
-        Assert.Throws<JSONRepairError>(() => JsonRepair.RepairJson("2..3"), "Invalid number '2.', expecting a digit but got '.', position: 2");
-        Assert.Throws<JSONRepairError>(() => JsonRepair.RepairJson("2e3.4"), "Unexpected character \".\", position: 3");
-        Assert.Throws<JSONRepairError>(() => JsonRepair.RepairJson("[2e,]"), "Invalid number '2e', expecting a digit but got ',', position: 2");
-        Assert.Throws<JSONRepairError>(() => JsonRepair.RepairJson("[-,]"), "Invalid number '-', expecting a digit but got ',', position: 2");
-        Assert.Throws<JSONRepairError>(() => JsonRepair.RepairJson("foo ["), "Unexpected character \"[\", position: 4");
-        Assert.Throws<JSONRepairError>(() => JsonRepair.RepairJson("\"\\u26\""), "Invalid unicode character \"\\u26\", position: 1");
-        Assert.Throws<JSONRepairError>(() => JsonRepair.RepairJson("\"\\uZ000\""), "Invalid unicode character \"\\uZ000\", position: 1");
+        Assert.Throws<JSONRepairError>(() => JsonRepair.RepairJson("", _inputType, _throwExceptions), "Unexpected end of JSON string, position: 0");
+        Assert.Throws<JSONRepairError>(() => JsonRepair.RepairJson("{\"a\",", _inputType, _throwExceptions), "Colon expected, position: 4");
+        Assert.Throws<JSONRepairError>(() => JsonRepair.RepairJson("{:2}", _inputType, _throwExceptions), "Object key expected, position: 1");
+        Assert.Throws<JSONRepairError>(() => JsonRepair.RepairJson("{\"a\":2,]", _inputType, _throwExceptions), "Unexpected character \"]\", position: 7");
+        Assert.Throws<JSONRepairError>(() => JsonRepair.RepairJson("{\"a\" ]", _inputType, _throwExceptions), "Colon expected, position: 5");
+        Assert.Throws<JSONRepairError>(() => JsonRepair.RepairJson("{}}", _inputType, _throwExceptions), "Unexpected character \"}\", position: 2");
+        Assert.Throws<JSONRepairError>(() => JsonRepair.RepairJson("[2,}", _inputType, _throwExceptions), "Unexpected character \"}\", position: 3");
+        Assert.Throws<JSONRepairError>(() => JsonRepair.RepairJson("2.3.4", _inputType, _throwExceptions), "Unexpected character \".\", position: 3");
+        Assert.Throws<JSONRepairError>(() => JsonRepair.RepairJson("2..3", _inputType, _throwExceptions), "Invalid number '2.', expecting a digit but got '.', position: 2");
+        Assert.Throws<JSONRepairError>(() => JsonRepair.RepairJson("2e3.4", _inputType, _throwExceptions), "Unexpected character \".\", position: 3");
+        Assert.Throws<JSONRepairError>(() => JsonRepair.RepairJson("[2e,]", _inputType, _throwExceptions), "Invalid number '2e', expecting a digit but got ',', position: 2");
+        Assert.Throws<JSONRepairError>(() => JsonRepair.RepairJson("[-,]", _inputType, _throwExceptions), "Invalid number '-', expecting a digit but got ',', position: 2");
+        Assert.Throws<JSONRepairError>(() => JsonRepair.RepairJson("foo [", _inputType, _throwExceptions), "Unexpected character \"[\", position: 4");
+        Assert.Throws<JSONRepairError>(() => JsonRepair.RepairJson("\"\\u26\"", _inputType, _throwExceptions), "Invalid unicode character \"\\u26\", position: 1");
+        Assert.Throws<JSONRepairError>(() => JsonRepair.RepairJson("\"\\uZ000\"", _inputType, _throwExceptions), "Invalid unicode character \"\\uZ000\", position: 1");
     }
 }
 

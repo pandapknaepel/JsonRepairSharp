@@ -37,9 +37,11 @@ namespace JsonRepairSharp_CLI
                 var outputFileName = "";
                 var outputFile     = "";
 
+                var inputType = JsonRepair.InputType.Other;
+
                 if (commandLineOptions.ContainsKey("l", "llm"))
                 {
-                    JsonRepairSharp.JsonRepair.Context = JsonRepair.InputType.LLM;
+                    inputType = JsonRepair.InputType.LLM;
                 }
 
                 if (commandLineOptions.ContainsKey("n", "new"))
@@ -56,7 +58,7 @@ namespace JsonRepairSharp_CLI
 
                 try
                 {
-                    outputFile = JsonRepairSharp.JsonRepair.RepairJson(inputFile);
+                    outputFile = JsonRepairSharp.JsonRepair.RepairJson(inputFile, inputType, true);
                 }
                 catch (Exception e)
                 {

@@ -15,10 +15,13 @@ namespace JsonRepairSharp_GUI
         Style redStyle;
         private string[] _linesLeft;
         private string[] _linesRight;
+        private readonly bool _throwExceptions;
+        private JsonRepair.InputType _inputType;
+
         public CompareJsonGui()
         {
             InitializeComponent();
-            JsonRepairSharp.JsonRepair.ThrowExceptions = false;
+            _throwExceptions = false;
 
             greenStyle = new MarkerStyle(new SolidBrush(Color.FromArgb(50, Color.Lime)));
             redStyle = new MarkerStyle(new SolidBrush(Color.FromArgb(50, Color.Red)));
@@ -95,8 +98,8 @@ namespace JsonRepairSharp_GUI
             }
 
             _linesLeft = File.ReadAllLines(fileName, Encoding.Default);
-            JsonRepairSharp.JsonRepair.Context = checkBoxIsLLM.Checked ? JsonRepair.InputType.LLM: JsonRepair.InputType.Other;
-            var jsonRepaired = JsonRepairSharp.JsonRepair.RepairJson(string.Join("\n", _linesLeft));
+            _inputType = checkBoxIsLLM.Checked ? JsonRepair.InputType.LLM: JsonRepair.InputType.Other;
+            var jsonRepaired = JsonRepairSharp.JsonRepair.RepairJson(string.Join("\n", _linesLeft), _inputType, _throwExceptions);
             if (string.IsNullOrEmpty(jsonRepaired)) return;
             _linesRight = jsonRepaired.Split("\n");
 

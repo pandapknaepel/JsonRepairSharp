@@ -1,7 +1,7 @@
 ﻿using System.Reflection;
 using System.Text.RegularExpressions;
-namespace JsonRepairSharp;
 
+namespace JsonRepairSharp;
 
 /*
    * Repair a string containing an invalid JSON document.
@@ -30,10 +30,6 @@ public static class JsonRepair
         Other
     }
 
-    public static bool ThrowExceptions { get; set; } = true;
-    public static InputType Context    { get; set; } = InputType.Other;
-
-
     /// <summary>
     /// Dictionary of control characters and their corresponding escape sequences.
     /// </summary>
@@ -53,44 +49,51 @@ public static class JsonRepair
     {
         { '\"', "\"" },
         { '\\', "\\" },
-        { '/' , "/"  },
-        { 'b' , "\b" },
-        { 'f' , "\f" },
-        { 'n' , "\n" },
-        { 'r' , "\r" },
-        { 't' , "\t" }
+        { '/', "/" },
+        { 'b', "\b" },
+        { 'f', "\f" },
+        { 'n', "\n" },
+        { 'r', "\r" },
+        { 't', "\t" }
     };
 
 
+    private static int _i = 0; // Current index in input text
+    private static string _text = ""; // input text
+    private static string _output = ""; // generated output
 
-    private static int     _i       = 0  ; // Current index in input text
-    private static string  _text    = "" ; // input text
-    private static string  _output  = "" ; // generated output
-    private static readonly MatchingQuotes MatchingQuotes = new MatchingQuotes(); // Helper class to match opening and closing quotes
-    private static int _closeCode   ='\0';
+    private static readonly MatchingQuotes
+        MatchingQuotes = new MatchingQuotes(); // Helper class to match opening and closing quotes
+
+    private static int _closeCode = '\0';
 
     /// <summary>
     /// Repairs a string containing an invalid JSON document.
     /// </summary>
     /// <param name="input">The JSON document to repair</param>
+    /// <param name="inputType">The type of input (LLM or Other)</param>
+    /// <param name="throwsException">Whether to throw exceptions or not</param>
     /// <returns>The repaired JSON document</returns>
     /// <exception cref="JSONRepairError">Thrown when an error occurs during JSON repair</exception>
-    public static string RepairJson(string input)
+    public static string RepairJson(string input, InputType inputType = InputType.Other, bool throwsException = true)
     {
-        _i      = 0;
+        _i = 0;
         _output = "";
-        _text   = input;
+        _text = input;
         bool strippedHeadingText = false;
 
-        if (Context == InputType.LLM)
+        if (inputType == InputType.LLM)
         {
             // LLMs are prone to adding an introduction and trailing explanation to any data structure
             // Repair: remove these first
             strippedHeadingText = ParseAndSkipAllUntilFirstBrace();
         }
 
-        var processed = ParseValue();
-        if (!processed) { ThrowUnexpectedEnd(); }
+        var processed = ParseValue(throwsException);
+        if (!processed)
+        {
+            ThrowUnexpectedEnd(throwsException);
+        }
 
         var processedComma = ParseCharacter(StringUtils.CodeComma);
         if (processedComma)
@@ -101,7 +104,7 @@ public static class JsonRepair
 
         // trailing characters after end of the root level object
         // For LLMs we will skip this, as it is likely trailing text. e.g. giving explanation on the structure above
-        if (Context == InputType.LLM && strippedHeadingText)
+        if (inputType == InputType.LLM && strippedHeadingText)
         {
             //Remove everything after final bracket
             var strippedTrailingText = ParseAndStripUntilLastBrace();
@@ -118,7 +121,7 @@ public static class JsonRepair
                 _output = StringUtils.InsertBeforeLastWhitespace(_output, ",");
             }
 
-            ParseNewlineDelimitedJson();
+            ParseNewlineDelimitedJson(throwsException);
         }
         else if (processedComma)
         {
@@ -131,28 +134,27 @@ public static class JsonRepair
             // reached the end of the document properly
             return _output;
         }
-        ThrowUnexpectedCharacter();
+
+        ThrowUnexpectedCharacter(throwsException);
 
         return _output;
     }
-
-
 
 
     /// <summary>
     /// Parses a JSON value.
     /// </summary>
     /// <returns>True if a value was parsed, false otherwise</returns>
-    private static bool ParseValue()
+    private static bool ParseValue(bool throwsException)
     {
         ParseWhitespaceAndSkipComments();
         bool processed =
-            ParseObject()   ||
-            ParseArray()    ||
-            ParseString()   ||
-            ParseNumber()   ||
+            ParseObject(throwsException) ||
+            ParseArray(throwsException) ||
+            ParseString(throwsException) ||
+            ParseNumber() ||
             ParseKeywords() ||
-            ParseUnquotedString();
+            ParseUnquotedString(throwsException);
         ParseWhitespaceAndSkipComments();
 
         return processed;
@@ -167,18 +169,21 @@ public static class JsonRepair
             _text.CharCodeAt(_i) != StringUtils.CodeOpeningBrace)
         {
             _i++;
-            if (_i >= _text.Length )
+            if (_i >= _text.Length)
             {
                 // Could not find any start brace, abort attempt
-                _i = start; return false;
+                _i = start;
+                return false;
             }
         }
+
         _closeCode = (_text.CharCodeAt(_i) == StringUtils.CodeOpeningBracket) ? StringUtils.CodeClosingBracket :
-                     (_text.CharCodeAt(_i) == StringUtils.CodeOpeningBrace  ) ? StringUtils.CodeClosingBrace : '\0';
+            (_text.CharCodeAt(_i) == StringUtils.CodeOpeningBrace) ? StringUtils.CodeClosingBrace : '\0';
         if (_text.IndexOf((char)_closeCode) == -1)
         {
             // Could not find any matching closing brace, abort attempt
-            _i = start; return false;
+            _i = start;
+            return false;
         }
 
         return true;
@@ -186,16 +191,20 @@ public static class JsonRepair
 
     private static bool ParseAndStripUntilLastBrace()
     {
-        var start = _output.Length-1;
-        var o     = _output.Length-1;
-        while (_output.CharCodeAt(o) != _closeCode && o > 0) { o--; }
+        var start = _output.Length - 1;
+        var o = _output.Length - 1;
+        while (_output.CharCodeAt(o) != _closeCode && o > 0)
+        {
+            o--;
+        }
 
-        if (o == 0) 
+        if (o == 0)
         {
             // could not find end brace/bracket, abort attempt
             return false;
         }
-        o       = Math.Min(o + 1, _output.Length);
+
+        o = Math.Min(o + 1, _output.Length);
         _output = _output.Substring(0, o);
         return true;
     }
@@ -231,7 +240,8 @@ public static class JsonRepair
     {
         string whitespace = "";
         bool normal;
-        while ((normal = StringUtils.IsWhitespace(_text.CharCodeAt(_i))) || StringUtils.IsSpecialWhitespace(_text.CharCodeAt(_i)))
+        while ((normal = StringUtils.IsWhitespace(_text.CharCodeAt(_i))) ||
+               StringUtils.IsSpecialWhitespace(_text.CharCodeAt(_i)))
         {
             if (normal)
             {
@@ -269,6 +279,7 @@ public static class JsonRepair
             {
                 _i++;
             }
+
             _i += 2;
 
             return true;
@@ -335,7 +346,7 @@ public static class JsonRepair
     /// Parses a JSON object.
     /// </summary>
     /// <returns>True if an object was parsed, false otherwise</returns>
-    private static bool ParseObject()
+    private static bool ParseObject(bool throwsException)
     {
         if (_text.CharCodeAt(_i) == StringUtils.CodeOpeningBrace)
         {
@@ -355,6 +366,7 @@ public static class JsonRepair
                         // repair missing comma
                         _output = StringUtils.InsertBeforeLastWhitespace(_output, ",");
                     }
+
                     ParseWhitespaceAndSkipComments();
                 }
                 else
@@ -363,15 +375,15 @@ public static class JsonRepair
                     initial = false;
                 }
 
-                bool processedKey = ParseString() || ParseUnquotedString();
+                bool processedKey = ParseString(throwsException) || ParseUnquotedString(throwsException);
                 if (!processedKey)
                 {
                     if (
-                    _text.CharCodeAt(_i) == StringUtils.CodeClosingBrace   ||
-                    _text.CharCodeAt(_i) == StringUtils.CodeOpeningBrace   ||
-                    _text.CharCodeAt(_i) == StringUtils.CodeClosingBracket ||
-                    _text.CharCodeAt(_i) == StringUtils.CodeOpeningBracket ||
-                    _text.CharCodeAt(_i) == '\0'
+                        _text.CharCodeAt(_i) == StringUtils.CodeClosingBrace ||
+                        _text.CharCodeAt(_i) == StringUtils.CodeOpeningBrace ||
+                        _text.CharCodeAt(_i) == StringUtils.CodeClosingBracket ||
+                        _text.CharCodeAt(_i) == StringUtils.CodeOpeningBracket ||
+                        _text.CharCodeAt(_i) == '\0'
                     )
                     {
                         // repair trailing comma
@@ -379,8 +391,9 @@ public static class JsonRepair
                     }
                     else
                     {
-                        ThrowObjectKeyExpected();
+                        ThrowObjectKeyExpected(throwsException);
                     }
+
                     break;
                 }
 
@@ -395,10 +408,11 @@ public static class JsonRepair
                     }
                     else
                     {
-                        ThrowColonExpected();
+                        ThrowColonExpected(throwsException);
                     }
                 }
-                bool processedValue = ParseValue();
+
+                bool processedValue = ParseValue(throwsException);
                 if (!processedValue)
                 {
                     if (processedColon)
@@ -408,7 +422,7 @@ public static class JsonRepair
                     }
                     else
                     {
-                        ThrowColonExpected();
+                        ThrowColonExpected(throwsException);
                     }
                 }
             }
@@ -434,7 +448,7 @@ public static class JsonRepair
     /// Parses a JSON array.
     /// </summary>
     /// <returns>True if an array was parsed, false otherwise</returns>
-    private static bool ParseArray()
+    private static bool ParseArray(bool throwsException)
     {
         if (_text.CharCodeAt(_i) == StringUtils.CodeOpeningBracket)
         {
@@ -459,7 +473,7 @@ public static class JsonRepair
                     initial = false;
                 }
 
-                bool processedValue = ParseValue();
+                bool processedValue = ParseValue(throwsException);
                 if (!processedValue)
                 {
                     // repair trailing comma
@@ -488,7 +502,7 @@ public static class JsonRepair
     // <summary>
     // Parses and repairs Newline Delimited JSON (NDJSON): multiple JSON objects separated by a newline character.
     // </summary>
-    private static void ParseNewlineDelimitedJson()
+    private static void ParseNewlineDelimitedJson(bool throwsException)
     {
         // repair NDJSON
         bool initial = true;
@@ -510,7 +524,7 @@ public static class JsonRepair
                 initial = false;
             }
 
-            processedValue = ParseValue();
+            processedValue = ParseValue(throwsException);
         }
 
         if (!processedValue)
@@ -528,7 +542,7 @@ public static class JsonRepair
     /// Parses a JSON string.
     /// </summary>
     /// <returns>True if a string was parsed, false otherwise</returns>
-    private static bool ParseString()
+    private static bool ParseString(bool throwsException)
     {
         bool skipEscapeChars = _text.CharCodeAt(_i) == StringUtils.CodeBackslash;
         if (skipEscapeChars)
@@ -558,10 +572,10 @@ public static class JsonRepair
                     else if (character == 'u')
                     {
                         if (
-                        StringUtils.IsHex(_text.CharCodeAt(_i + 2)) &&
-                        StringUtils.IsHex(_text.CharCodeAt(_i + 3)) &&
-                        StringUtils.IsHex(_text.CharCodeAt(_i + 4)) &&
-                        StringUtils.IsHex(_text.CharCodeAt(_i + 5))
+                            StringUtils.IsHex(_text.CharCodeAt(_i + 2)) &&
+                            StringUtils.IsHex(_text.CharCodeAt(_i + 3)) &&
+                            StringUtils.IsHex(_text.CharCodeAt(_i + 4)) &&
+                            StringUtils.IsHex(_text.CharCodeAt(_i + 5))
                         )
                         {
                             _output += _text.Substring(_i, 6);
@@ -569,7 +583,7 @@ public static class JsonRepair
                         }
                         else
                         {
-                            ThrowInvalidUnicodeCharacter(_i);
+                            ThrowInvalidUnicodeCharacter(throwsException, _i);
                         }
                     }
                     else
@@ -600,8 +614,9 @@ public static class JsonRepair
                     {
                         if (!StringUtils.IsValidStringCharacter(code))
                         {
-                            ThrowInvalidCharacter(character);
+                            ThrowInvalidCharacter(throwsException, character);
                         }
+
                         _output += character;
                         _i++;
                     }
@@ -623,6 +638,7 @@ public static class JsonRepair
                 {
                     // repair non-normalized quote. todo?
                 }
+
                 _output += "\"";
                 _i++;
             }
@@ -632,7 +648,7 @@ public static class JsonRepair
                 _output += "\"";
             }
 
-            ParseConcatenatedString();
+            ParseConcatenatedString(throwsException);
 
             return true;
         }
@@ -644,7 +660,7 @@ public static class JsonRepair
     /// Parses and repairs concatenated JSON strings in the JSON document.
     /// </summary>
     /// <returns>True if any concatenated strings were parsed and repaired, false otherwise</returns>
-    private static bool ParseConcatenatedString()
+    private static bool ParseConcatenatedString(bool throwsException)
     {
         bool processed = false;
 
@@ -658,7 +674,7 @@ public static class JsonRepair
             // repair: remove the end quote of the first string
             _output = StringUtils.StripLastOccurrence(_output, "\"", true);
             var start = _output.Length;
-            ParseString();
+            ParseString(throwsException);
 
             // repair: remove the start quote of the second string
             _output = StringUtils.RemoveAtIndex(_output, start, 1);
@@ -703,6 +719,7 @@ public static class JsonRepair
             {
                 return true;
             }
+
             while (StringUtils.IsDigit(_text.CharCodeAt(_i)))
             {
                 _i++;
@@ -716,10 +733,12 @@ public static class JsonRepair
             {
                 _i++;
             }
+
             if (ExpectDigitOrRepair(start))
             {
                 return true;
             }
+
             while (StringUtils.IsDigit(_text.CharCodeAt(_i)))
             {
                 _i++;
@@ -742,11 +761,11 @@ public static class JsonRepair
     private static bool ParseKeywords()
     {
         return
-            ParseKeyword("true", "true")   ||
+            ParseKeyword("true", "true") ||
             ParseKeyword("false", "false") ||
-            ParseKeyword("null", "null")   ||
+            ParseKeyword("null", "null") ||
             // repair Python keywords True, False, None
-            ParseKeyword("True", "true")   ||
+            ParseKeyword("True", "true") ||
             ParseKeyword("False", "false") ||
             ParseKeyword("None", "null");
     }
@@ -762,7 +781,7 @@ public static class JsonRepair
         if (_text.SubstringSafe(_i, name.Length) == name)
         {
             _output += value;
-            _i      += name.Length;
+            _i += name.Length;
             return true;
         }
 
@@ -773,7 +792,7 @@ public static class JsonRepair
     /// Parses an unquoted JSON string or a function call.
     /// </summary>
     /// <returns>True if an unquoted string or a function call was parsed, false otherwise</returns>
-    private static bool ParseUnquotedString()
+    private static bool ParseUnquotedString(bool throwsException)
     {
         // note that the symbol can end with whitespaces: we stop at the next delimiter
         int start = _i;
@@ -790,7 +809,7 @@ public static class JsonRepair
                 // repair a JSONP function call like callback({...});
                 _i++;
 
-                ParseValue();
+                ParseValue(throwsException);
 
                 if (_text.CharCodeAt(_i) == StringUtils.CodeCloseParenthesis)
                 {
@@ -821,6 +840,7 @@ public static class JsonRepair
                 return true;
             }
         }
+
         return false;
     }
 
@@ -870,69 +890,71 @@ public static class JsonRepair
 
     /// <summary>
     /// Throws an invalid character exception
-    /// Will be ignored if the ThrowExceptions property is false
+    /// Will be ignored if the throwsException property is false
     /// </summary>
+    /// <param name="throwsException"></param>
     /// <param name="character"></param>
     /// <exception cref="JSONRepairError"></exception>
-    private static void ThrowInvalidCharacter(char character)
+    private static void ThrowInvalidCharacter(bool throwsException, char character)
     {
-        if (ThrowExceptions) throw new JSONRepairError($"Invalid character {character}", _i);
+        if (throwsException) throw new JSONRepairError($"Invalid character {character}", _i);
     }
 
     /// <summary>
     /// Throws an unexpected character exception
-    /// Will be ignored if the ThrowExceptions property is false
+    /// Will be ignored if the throwsException property is false
     /// </summary>
     /// <exception cref="JSONRepairError"></exception>
-    private static void ThrowUnexpectedCharacter()
+    private static void ThrowUnexpectedCharacter(bool throwsException)
     {
-        if (ThrowExceptions) throw new JSONRepairError($"Unexpected character {_text.CharCodeAt(_i)}", _i);
+        if (throwsException) throw new JSONRepairError($"Unexpected character {_text.CharCodeAt(_i)}", _i);
     }
 
     /// <summary>
     /// Throws an unexpected end exception
-    /// Will be ignored if the ThrowExceptions property is false
+    /// Will be ignored if the throwsException property is false
     /// </summary>
     /// <exception cref="JSONRepairError"></exception>
-    private static void ThrowUnexpectedEnd()
+    private static void ThrowUnexpectedEnd(bool throwsException)
     {
-        if (ThrowExceptions) throw new JSONRepairError("Unexpected end of json string", _text.Length);
+        if (throwsException) throw new JSONRepairError("Unexpected end of json string", _text.Length);
     }
 
     /// <summary>
     /// Throws an unexpected object key expected exception
-    /// Will be ignored if the ThrowExceptions property is false
+    /// Will be ignored if the throwsException property is false
     /// </summary>
     /// <exception cref="JSONRepairError"></exception>
-    private static void ThrowObjectKeyExpected()
+    private static void ThrowObjectKeyExpected(bool throwsException)
     {
-        if (ThrowExceptions) throw new JSONRepairError("Object key expected", _i);
+        if (throwsException) throw new JSONRepairError("Object key expected", _i);
     }
 
     /// <summary>
     /// Throws an colon expected exception
-    /// Will be ignored if the ThrowExceptions property is false
+    /// Will be ignored if the throwsException property is false
     /// </summary>
     /// <exception cref="JSONRepairError"></exception>
-    private static void ThrowColonExpected()
+    private static void ThrowColonExpected(bool throwsException)
     {
-        if (ThrowExceptions) throw new JSONRepairError("Colon expected", _i);
+        if (throwsException) throw new JSONRepairError("Colon expected", _i);
     }
 
     /// <summary>
     /// Throws an invalid unicode character exception
-    /// Will be ignored if the ThrowExceptions property is false
+    /// Will be ignored if the throwsException property is false
     /// </summary>
     /// <exception cref="JSONRepairError"></exception>
-    private static void ThrowInvalidUnicodeCharacter(int start)
+    private static void ThrowInvalidUnicodeCharacter(bool throwsException, int start)
     {
         int end = start + 2;
         while (Regex.IsMatch(_text[end].ToString(), @"\w"))
         {
             end++;
         }
+
         string chars = _text.Substring(start, end - start);
-        if (ThrowExceptions) throw new JSONRepairError($"Invalid unicode character \"{chars}\"", _i);
+        if (throwsException) throw new JSONRepairError($"Invalid unicode character \"{chars}\"", _i);
     }
 
     /// <summary>
@@ -944,12 +966,10 @@ public static class JsonRepair
     }
 
 
-
     public static string GetVersion()
     {
         return Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? "";
     }
-
 }
 
 /// <summary>
