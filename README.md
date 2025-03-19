@@ -4,6 +4,20 @@
 ![JSOn Repair logo](/Assets/logo_small.png?raw=true )
 # JsonRepair Sharp
 
+## About this Fork
+
+This fork of [JsonRepairSharp](https://github.com/thijse/JsonRepairSharp) introduces several improvements and modifications aimed at making the library more robust and accessible for .NET developers.
+
+### Key Enhancements:
+
+- **NuGet Package Publishing:** This fork is intended to be published as a NuGet package, making it easier to integrate JsonRepairSharp into your projects.
+- **Upgraded to .NET 9:** The project has been updated from .NET 7 to .NET 9 to ensure compatibility with the latest framework features and performance improvements.
+- **Thread-Safety Improvements:** The `JsonRepair` class has been refactored to remove static properties. The `RepairJson` method now takes parameters instead of relying on static configuration, allowing for safe concurrent execution.
+
+By maintaining the original functionality of JsonRepairSharp while making these refinements, this fork enhances usability, performance, and maintainability.
+
+## About this project
+
 Jsonrepair Sharp is a near-literal translation of the TypeScript JsonRepair library, see https://github.com/josdejong/jsonrepair
 
 The jsonrepair library is basically an extended JSON parser. It parses the provided JSON document character by character. When it encounters a non-valid JSON structures it wil look to see it it can reconstruct the intended JSON. For example, after encountering an opening bracket {, it expects a key wrapped in double quotes. When it encounters a key without quotes, or wrapped in other quote characters, it will change these to double quotes instead.
@@ -51,32 +65,64 @@ But with the advent of Language Model Models (LLMs) there is yet another use-cas
 Use the original typescript version in a full-fledged application: https://jsoneditoronline.org
 Read the background article ["How to fix JSON and validate it with ease"](https://jsoneditoronline.org/indepth/parse/fix-json/)
 
-## Code example
+Here's the updated code example that reflects the changes made in your fork:
 
+---
+
+## Code Example (Updated in Fork)
+
+In this fork, the `RepairJson` method has been updated to remove static properties, making it thread-safe. The method now accepts parameters instead of relying on global settings.
+
+### **Before (Original Code)**
 ```cs
-
 // Enable throwing exceptions when JSON code can not be repaired or even understood (enabled by default)
 JsonRepair.ThrowExceptions = true;
 
 // Set context as LLM or Other. This will repair the json slightly differently. (Other by default)
-JsonRepair.Context         = Other;
+JsonRepair.Context = Other;
 
- try
- {
-     // The following is invalid JSON: is consists of JSON contents copied from 
-     // a JavaScript code base, where the keys are missing double quotes, 
-     // and strings are using single quotes:
-     string json = "{name: 'John'}";
-     string repaired = JSONRepair.JsonRepair(json);
-     Console.WriteLine(repaired);
-     // Output: {"name": "John"}
- }
- catch (JSONRepairError err)
- {
-     Console.WriteLine(err.Message);
-     Console.WriteLine("Position: " + err.Data["Position"]);
- }
+try
+{
+    string json = "{name: 'John'}";
+    string repaired = JsonRepair.JsonRepair(json);
+    Console.WriteLine(repaired);
+    // Output: {"name": "John"}
+}
+catch (JSONRepairError err)
+{
+    Console.WriteLine(err.Message);
+    Console.WriteLine("Position: " + err.Data["Position"]);
+}
 ```
+
+### **Now (Updated in Fork)**
+```cs
+try
+{
+    // The following is invalid JSON: it consists of JSON contents copied from 
+    // a JavaScript code base, where the keys are missing double quotes, 
+    // and strings are using single quotes:
+    string json = "{name: 'John'}";
+
+    // New method signature using parameters instead of static properties
+    string repaired = JsonRepair.RepairJson(json, InputType.Other, true);
+    
+    Console.WriteLine(repaired);
+    // Output: {"name": "John"}
+}
+catch (JSONRepairError err)
+{
+    Console.WriteLine(err.Message);
+    Console.WriteLine("Position: " + err.Data["Position"]);
+}
+```
+
+### **What Changed?**
+- `RepairJson` now takes parameters (`inputType` and `throwsException`) instead of relying on static properties.
+- The class is now thread-safe because no shared state (`ThrowExceptions`, `Context`) is used.
+- The method call is explicit and does not require setting global configuration.
+
+This change improves maintainability and makes the library safe for concurrent execution in multi-threaded environments.
 
 ### Command Line Interface (CLI)
 
