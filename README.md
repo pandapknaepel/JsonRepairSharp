@@ -11,7 +11,7 @@ This fork of [JsonRepairSharp](https://github.com/thijse/JsonRepairSharp) introd
 ### Key Enhancements:
 
 - **NuGet Package Publishing:** This fork is intended to be published as a NuGet package, making it easier to integrate JsonRepairSharp into your projects.
-- **Upgraded to .NET 9:** The project has been updated from .NET 7 to .NET 9 to ensure compatibility with the latest framework features and performance improvements.
+- **Multi-Framework Support:** The project now supports both .NET 8 and .NET 9, ensuring maximum compatibility with current and future .NET projects while leveraging the latest framework features and performance improvements.
 - **Thread-Safety Improvements:** The `JsonRepair` class has been refactored to remove static properties. The `RepairJson` method now takes parameters instead of relying on static configuration, allowing for safe concurrent execution.
 
 By maintaining the original functionality of JsonRepairSharp while making these refinements, this fork enhances usability, performance, and maintainability.

@@ -1,11 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
+        <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <Version>1.2.2</Version>
-        <AssemblyVersion>1.2.2</AssemblyVersion>
+        <Version>1.2.3</Version>
+        <AssemblyVersion>1.2.3</AssemblyVersion>
         <Deterministic>false</Deterministic>
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>
