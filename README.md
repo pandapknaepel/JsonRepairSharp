@@ -193,4 +193,5 @@ Thanks go out to Jos de Jong, who not only did all the heavy lifting in the orig
 
 ## License
 
-Released under the [MITS license](LICENSE.md).
+Released under the [MIT license](LICENSE.md).
+
