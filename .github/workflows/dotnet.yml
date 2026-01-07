@@ -24,8 +24,13 @@ jobs:
         dotnet-version: |
           8.0.x
           9.0.x
+          10.0.x
     - name: Restore dependencies
-      run: dotnet restore JsonRepairSharp.sln --ignore-failed-sources || true
+      run: |
+        dotnet restore JsonRepairSharp/JsonRepairSharp.csproj
+        dotnet restore JsonRepairSharp-CLI/JsonRepairSharp-CLI.csproj
+        dotnet restore JsonRepairSharp-Minimal/JsonRepairSharp-Minimal.csproj
+        dotnet restore JsonRepairSharp.Tests/JsonRepairSharp.Tests.csproj
     - name: Build
       run: |
         dotnet build JsonRepairSharp/JsonRepairSharp.csproj --configuration Release --no-restore
@@ -48,6 +53,7 @@ jobs:
         dotnet-version: |
           8.0.x
           9.0.x
+          10.0.x
     - name: Restore dependencies
       run: dotnet restore JsonRepairSharp/JsonRepairSharp.csproj
     - name: Build
