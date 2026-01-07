@@ -4,8 +4,8 @@
         <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <Version>1.2.3</Version>
-        <AssemblyVersion>1.2.3</AssemblyVersion>
+        <Version>1.2.4</Version>
+        <AssemblyVersion>1.2.4</AssemblyVersion>
         <Deterministic>false</Deterministic>
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>
