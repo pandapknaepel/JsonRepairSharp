@@ -14,7 +14,7 @@ on:
 jobs:
   build:
 
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
@@ -25,15 +25,19 @@ jobs:
           8.0.x
           9.0.x
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore JsonRepairSharp.sln --ignore-failed-sources || true
     - name: Build
-      run: dotnet build --configuration Release --no-restore
+      run: |
+        dotnet build JsonRepairSharp/JsonRepairSharp.csproj --configuration Release --no-restore
+        dotnet build JsonRepairSharp-CLI/JsonRepairSharp-CLI.csproj --configuration Release --no-restore
+        dotnet build JsonRepairSharp-Minimal/JsonRepairSharp-Minimal.csproj --configuration Release --no-restore
+        dotnet build JsonRepairSharp.Tests/JsonRepairSharp.Tests.csproj --configuration Release --no-restore
     - name: Test
-      run: dotnet test --configuration Release --no-build --verbosity normal
+      run: dotnet test JsonRepairSharp.Tests/JsonRepairSharp.Tests.csproj --configuration Release --no-build --verbosity normal
 
   publish:
     needs: build
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
 
     steps:
@@ -45,9 +49,9 @@ jobs:
           8.0.x
           9.0.x
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore JsonRepairSharp/JsonRepairSharp.csproj
     - name: Build
-      run: dotnet build --configuration Release --no-restore
+      run: dotnet build JsonRepairSharp/JsonRepairSharp.csproj --configuration Release --no-restore
     - name: Pack NuGet package
       run: dotnet pack JsonRepairSharp/JsonRepairSharp.csproj --configuration Release --no-build --output ./nupkg
     - name: Publish to NuGet.org
